@@ -3,6 +3,7 @@ from app.github_client import get_pr_diff
 from app.diff_parser import parse_diff
 from rules.secrets import detect_secrets
 from app.ai_reviewer import generate_ai_review
+from app.github_client import get_pr_diff, post_pr_comment
 
 app = FastAPI()
 
@@ -52,11 +53,16 @@ async def github_webhook(request: Request):
         print("\nFindings:")
         for f in findings:
             print(f)
-            
+
         # STEP 4: AI Review
         ai_review = generate_ai_review(findings)
 
-        print("\n🧠 AI Review:")
+        print("\nAI Review:")
         print(ai_review)
+
+        # STEP 5: Post comment to GitHub
+        post_pr_comment(repo_name, pr_number, ai_review)
+
+        print("\nComment posted to PR!")
 
     return {"status": "processed"}

@@ -19,3 +19,23 @@ def get_pr_diff(repo_full_name, pr_number):
         raise Exception(f"Failed to fetch PR diff: {response.text}")
 
     return response.text
+
+
+def post_pr_comment(repo_full_name, pr_number, comment_body):
+    url = f"{GITHUB_API}/repos/{repo_full_name}/issues/{pr_number}/comments"
+
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    data = {
+        "body": comment_body
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code != 201:
+        raise Exception(f"Failed to post comment: {response.text}")
+
+    return response.json()
