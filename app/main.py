@@ -21,7 +21,7 @@ BOT_TAG = "<!-- DEVSECOPS_BOT -->"
 async def github_webhook(request: Request):
     try:
         payload = await request.json()
-        event_type = request.headers.get("X-GitHub-Event")
+        event_type = request.headers.get("x-github-event", "").lower()
 
         # Webhook verification
         if event_type == "ping":
@@ -38,6 +38,9 @@ async def github_webhook(request: Request):
             pr = payload.get("pull_request", {})
             pr_number = pr.get("number")
             repo_name = payload.get("repository", {}).get("full_name")
+
+            print("Headers:", request.headers)
+            print("Event type:", event_type)
 
             print("\nPR Event Detected!")
             print(f"Repo: {repo_name}")
