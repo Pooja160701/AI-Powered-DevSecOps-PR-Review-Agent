@@ -5,23 +5,6 @@ from rules.secrets import detect_secrets
 
 app = FastAPI()
 
-# after parsing
-
-findings = detect_secrets(parsed)
-
-print("\n🚨 Findings:")
-for f in findings:
-    print(f)
-    
-# after fetching diff
-
-parsed = parse_diff(diff)
-
-print("\nParsed Diff:")
-for file in parsed:
-    print(f"\nFile: {file['file']}")
-    for line in file["added_lines"]:
-        print(f"  + {line}")
 
 @app.post("/webhook")
 async def github_webhook(request: Request):
@@ -35,7 +18,7 @@ async def github_webhook(request: Request):
     if event_type == "pull_request":
         action = payload.get("action")
 
-        # Only act on these
+        # Only process relevant events
         if action not in ["opened", "synchronize"]:
             return {"status": "ignored"}
 
@@ -48,10 +31,26 @@ async def github_webhook(request: Request):
         print(f"PR Number: {pr_number}")
         print(f"Action: {action}")
 
-        # FETCH DIFF
+        # STEP 1: Fetch diff
         diff = get_pr_diff(repo_name, pr_number)
 
         print("\nPR DIFF:")
-        print(diff[:1000])  # print first 1000 chars
+        print(diff[:500])
+
+        # STEP 2: Parse diff
+        parsed = parse_diff(diff)
+
+        print("\nParsed Diff:")
+        for file in parsed:
+            print(f"\nFile: {file['file']}")
+            for line in file["added_lines"]:
+                print(f"  + {line}")
+
+        # STEP 3: Detect secrets
+        findings = detect_secrets(parsed)
+
+        print("\nFindings:")
+        for f in findings:
+            print(f)
 
     return {"status": "processed"}
