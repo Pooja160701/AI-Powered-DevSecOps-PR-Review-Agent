@@ -19,6 +19,8 @@ def generate_ai_review(findings):
     if not findings:
         return "No major security issues detected."
 
+    formatted = format_findings(findings)
+
     prompt = f"""
 You are a senior DevSecOps engineer.
 
@@ -33,6 +35,12 @@ Output format:
 - Issue
 - Why it matters
 - Fix
+
+## High Priority Issues
+...
+
+## Medium Issues
+...
 
 ## Summary
 Short summary of code health
