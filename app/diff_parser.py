@@ -1,6 +1,5 @@
 from unidiff import PatchSet
 
-
 def parse_diff(diff_text):
     patch = PatchSet(diff_text)
 
