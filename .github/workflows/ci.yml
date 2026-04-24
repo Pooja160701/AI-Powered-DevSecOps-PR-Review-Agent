@@ -1,25 +1,43 @@
-name: Code Quality
+name: DevSecOps CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
-  lint:
+  devsecops:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: Install deps
-        run: pip install black flake8
+      - name: Install dependencies
+        run: |
+          pip install black flake8 bandit
 
       - name: Run Black
         run: python -m black --check .
 
       - name: Run Flake8
-        run: python -m flake8 .
+        run: python -m flake8 app rules tests
+
+      - name: Run Bandit (Python Security)
+        run: |
+          bandit -r app rules -ll
+
+      - name: Build Docker Image
+        run: docker build -t devsecops-agent .
+
+      - name: Run Trivy (Docker Security)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: devsecops-agent
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
