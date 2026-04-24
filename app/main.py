@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from app.github_client import get_pr_diff
 from app.diff_parser import parse_diff
 from rules.secrets import detect_secrets
+from app.ai_reviewer import generate_ai_review
 
 app = FastAPI()
 
@@ -51,5 +52,11 @@ async def github_webhook(request: Request):
         print("\nFindings:")
         for f in findings:
             print(f)
+            
+        # STEP 4: AI Review
+        ai_review = generate_ai_review(findings)
+
+        print("\n🧠 AI Review:")
+        print(ai_review)
 
     return {"status": "processed"}
