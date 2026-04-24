@@ -3,7 +3,7 @@ from app.github_client import (
     get_pr_diff,
     post_pr_comment,
     get_existing_comments,
-    update_comment
+    update_comment,
 )
 from app.diff_parser import parse_diff
 from rules.secrets import detect_secrets
@@ -14,7 +14,6 @@ from app.ai_reviewer import generate_ai_review
 
 app = FastAPI()
 
-# Unique identifier to avoid duplicate comments
 BOT_TAG = "<!-- DEVSECOPS_BOT -->"
 
 
@@ -45,7 +44,7 @@ async def github_webhook(request: Request):
             print(f"PR Number: {pr_number}")
             print(f"Action: {action}")
 
-            # STEP 1: Fetch PR diff
+            # STEP 1: Fetch diff
             diff = get_pr_diff(repo_name, pr_number)
 
             print("\nPR DIFF (truncated):")
@@ -61,36 +60,31 @@ async def github_webhook(request: Request):
                     print(f"  + {line}")
 
             # STEP 3: Run rule engine
-            all_findings = []
+            findings = []
 
-            # Security
-            all_findings.extend(detect_secrets(parsed))
-
-            # DevOps
-            all_findings.extend(check_dockerfile(parsed))
-            all_findings.extend(check_k8s(parsed))
-            all_findings.extend(check_python(parsed))
-
-            findings = all_findings
+            findings.extend(detect_secrets(parsed))
+            findings.extend(check_dockerfile(parsed))
+            findings.extend(check_k8s(parsed))
+            findings.extend(check_python(parsed))
 
             print("\nFindings:")
-            for f in findings:
-                print(f)
+            for finding in findings:
+                print(finding)
 
             # STEP 4: AI Review
             ai_review = generate_ai_review(findings)
 
-            # Add bot tag
             ai_review = BOT_TAG + "\n" + ai_review
 
             print("\nAI Review:")
             print(ai_review)
 
-            # STEP 5: Smart PR Comment (Create / Update)
+            # STEP 5: Smart comment (create/update)
             try:
                 comments = get_existing_comments(repo_name, pr_number)
 
                 existing_comment = None
+
                 for comment in comments:
                     if BOT_TAG in comment["body"]:
                         existing_comment = comment
@@ -106,11 +100,11 @@ async def github_webhook(request: Request):
                     post_pr_comment(repo_name, pr_number, ai_review)
                     print("\nNew comment posted")
 
-            except Exception as e:
-                print(f"\nComment error: {str(e)}")
+            except Exception as error:
+                print(f"\nComment error: {str(error)}")
 
             return {"status": "processed"}
 
-    except Exception as e:
-        print(f"\nWebhook Error: {str(e)}")
+    except Exception as error:
+        print(f"\nWebhook Error: {str(error)}")
         return {"status": "error"}

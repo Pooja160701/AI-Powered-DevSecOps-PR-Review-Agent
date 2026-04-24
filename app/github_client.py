@@ -10,7 +10,7 @@ def get_pr_diff(repo_full_name, pr_number):
 
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3.diff"
+        "Accept": "application/vnd.github.v3.diff",
     }
 
     response = requests.get(url, headers=headers)
@@ -26,12 +26,10 @@ def post_pr_comment(repo_full_name, pr_number, comment_body):
 
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Accept": "application/vnd.github.v3+json",
     }
 
-    data = {
-        "body": comment_body
-    }
+    data = {"body": comment_body}
 
     response = requests.post(url, headers=headers, json=data)
 
@@ -40,12 +38,13 @@ def post_pr_comment(repo_full_name, pr_number, comment_body):
 
     return response.json()
 
+
 def get_existing_comments(repo_full_name, pr_number):
     url = f"{GITHUB_API}/repos/{repo_full_name}/issues/{pr_number}/comments"
 
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Accept": "application/vnd.github.v3+json",
     }
 
     response = requests.get(url, headers=headers)
@@ -61,7 +60,7 @@ def update_comment(repo_full_name, comment_id, new_body):
 
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Accept": "application/vnd.github.v3+json",
     }
 
     response = requests.patch(url, headers=headers, json={"body": new_body})

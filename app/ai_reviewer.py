@@ -9,22 +9,19 @@ load_dotenv()
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+
 def format_findings(findings):
     """
     Group findings by severity
     """
-    grouped = {
-        "CRITICAL": [],
-        "HIGH": [],
-        "MEDIUM": [],
-        "LOW": []
-    }
+    grouped = {"CRITICAL": [], "HIGH": [], "MEDIUM": [], "LOW": []}
 
-    for f in findings:
-        severity = f.get("severity", "MEDIUM")
-        grouped.setdefault(severity, []).append(f)
+    for finding in findings:
+        severity = finding.get("severity", "MEDIUM")
+        grouped.setdefault(severity, []).append(finding)
 
     return grouped
+
 
 def generate_ai_review(findings):
     """
@@ -33,7 +30,6 @@ def generate_ai_review(findings):
     if not findings:
         return "No major security issues detected."
 
-    # Convert findings into structured JSON (better for LLM reasoning)
     formatted = json.dumps(format_findings(findings), indent=2)
 
     prompt = f"""
@@ -71,11 +67,11 @@ Be concise, clear, and professional.
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a DevSecOps expert."},
-                {"role": "user", "content": prompt}
-            ]
+                {"role": "user", "content": prompt},
+            ],
         )
 
         return response.choices[0].message.content
 
-    except Exception as e:
-        return f"AI Review failed: {str(e)}"
+    except Exception as error:
+        return f"AI Review failed: {str(error)}"
