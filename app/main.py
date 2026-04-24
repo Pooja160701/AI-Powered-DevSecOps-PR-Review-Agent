@@ -8,6 +8,8 @@ from app.github_client import (
 from app.diff_parser import parse_diff
 from rules.secrets import detect_secrets
 from app.ai_reviewer import generate_ai_review
+from rules.docker import check_dockerfile
+from rules.k8s import check_k8s
 
 app = FastAPI()
 
@@ -59,7 +61,18 @@ async def github_webhook(request: Request):
                     print(f"  + {line}")
 
             # STEP 3: Detect secrets
-            findings = detect_secrets(parsed)
+            all_findings = []
+
+            # Security rules
+            all_findings.extend(detect_secrets(parsed))
+
+            # DevOps rules
+            all_findings.extend(check_dockerfile(parsed))
+
+            #K8s
+            all_findings.extend(check_k8s(parsed))
+
+            findings = all_findings
 
             print("\nFindings:")
             for f in findings:

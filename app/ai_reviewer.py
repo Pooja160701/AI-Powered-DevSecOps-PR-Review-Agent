@@ -6,6 +6,15 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+def format_findings(findings):
+    grouped = {"CRITICAL": [], "HIGH": [], "MEDIUM": [], "LOW": []}
+
+    for f in findings:
+        severity = f.get("severity", "MEDIUM")
+        grouped.setdefault(severity, []).append(f)
+
+    return grouped
+
 def generate_ai_review(findings):
     if not findings:
         return "No major security issues detected."
@@ -15,8 +24,8 @@ You are a senior DevSecOps engineer.
 
 Analyze the following security findings from a pull request and generate a professional PR review.
 
-Findings:
-{findings}
+Findings grouped by severity:
+{formatted}
 
 Output format:
 
