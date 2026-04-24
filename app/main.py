@@ -1,7 +1,27 @@
 from fastapi import FastAPI, Request
 from app.github_client import get_pr_diff
+from app.diff_parser import parse_diff
+from rules.secrets import detect_secrets
 
 app = FastAPI()
+
+# after parsing
+
+findings = detect_secrets(parsed)
+
+print("\n🚨 Findings:")
+for f in findings:
+    print(f)
+    
+# after fetching diff
+
+parsed = parse_diff(diff)
+
+print("\nParsed Diff:")
+for file in parsed:
+    print(f"\nFile: {file['file']}")
+    for line in file["added_lines"]:
+        print(f"  + {line}")
 
 @app.post("/webhook")
 async def github_webhook(request: Request):
