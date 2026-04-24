@@ -1,0 +1,21 @@
+import os
+import requests
+
+GITHUB_API = "https://api.github.com"
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+
+def get_pr_diff(repo_full_name, pr_number):
+    url = f"{GITHUB_API}/repos/{repo_full_name}/pulls/{pr_number}"
+
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3.diff"
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch PR diff: {response.text}")
+
+    return response.text
