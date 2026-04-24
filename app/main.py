@@ -1,0 +1,110 @@
+from fastapi import FastAPI, Request
+from app.github_client import (
+    get_pr_diff,
+    post_pr_comment,
+    get_existing_comments,
+    update_comment,
+)
+from app.diff_parser import parse_diff
+from rules.secrets import detect_secrets
+from rules.docker import check_dockerfile
+from rules.k8s import check_k8s
+from rules.python import check_python
+from app.ai_reviewer import generate_ai_review
+
+app = FastAPI()
+
+BOT_TAG = "<!-- DEVSECOPS_BOT -->"
+
+
+@app.post("/webhook")
+async def github_webhook(request: Request):
+    try:
+        payload = await request.json()
+        event_type = request.headers.get("X-GitHub-Event")
+
+        # Webhook verification
+        if event_type == "ping":
+            print("Webhook verified successfully!")
+            return {"status": "ok"}
+
+        # Handle PR events
+        if event_type == "pull_request":
+            action = payload.get("action")
+
+            if action not in ["opened", "synchronize"]:
+                return {"status": "ignored"}
+
+            pr = payload.get("pull_request", {})
+            pr_number = pr.get("number")
+            repo_name = payload.get("repository", {}).get("full_name")
+
+            print("\nPR Event Detected!")
+            print(f"Repo: {repo_name}")
+            print(f"PR Number: {pr_number}")
+            print(f"Action: {action}")
+
+            # STEP 1: Fetch diff
+            diff = get_pr_diff(repo_name, pr_number)
+
+            print("\nPR DIFF (truncated):")
+            print(diff[:500])
+
+            # STEP 2: Parse diff
+            parsed = parse_diff(diff)
+
+            print("\nParsed Diff:")
+            for file in parsed:
+                print(f"\nFile: {file['file']}")
+                for line in file["added_lines"]:
+                    print(f"  + {line}")
+
+            # STEP 3: Run rule engine
+            findings = []
+
+            findings.extend(detect_secrets(parsed))
+            findings.extend(check_dockerfile(parsed))
+            findings.extend(check_k8s(parsed))
+            findings.extend(check_python(parsed))
+
+            print("\nFindings:")
+            for finding in findings:
+                print(finding)
+
+            # STEP 4: AI Review
+            ai_review = generate_ai_review(findings)
+
+            ai_review = BOT_TAG + "\n" + ai_review
+
+            print("\nAI Review:")
+            print(ai_review)
+
+            # STEP 5: Smart comment (create/update)
+            try:
+                comments = get_existing_comments(repo_name, pr_number)
+
+                existing_comment = None
+
+                for comment in comments:
+                    if BOT_TAG in comment["body"]:
+                        existing_comment = comment
+                        break
+
+                if existing_comment:
+                    if existing_comment["body"] == ai_review:
+                        print("\nNo changes → skipping update")
+                    else:
+                        update_comment(repo_name, existing_comment["id"], ai_review)
+                        print("\nUpdated existing comment")
+                else:
+                    post_pr_comment(repo_name, pr_number, ai_review)
+                    print("\nNew comment posted")
+
+            except Exception as error:
+                print(f"\nComment error: {str(error)}")
+
+            return {"status": "processed"}
+
+    except Exception as error:
+        print(f"\nWebhook Error: {str(error)}")
+        return {"status": "error"}

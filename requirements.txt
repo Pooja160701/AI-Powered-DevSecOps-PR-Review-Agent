@@ -1,0 +1,8 @@
+fastapi
+uvicorn 
+requests 
+python-dotenv
+ngrok
+bandit
+black
+flake8
