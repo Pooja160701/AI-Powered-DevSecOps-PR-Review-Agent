@@ -39,21 +39,7 @@ An intelligent **DevSecOps automation agent** that analyzes pull requests in rea
 
 ## 🏗️ Architecture
 
-```
-GitHub PR Event (Webhook)
-        ↓
-FastAPI Webhook Server
-        ↓
-PR Diff Fetcher (GitHub API)
-        ↓
-Diff Parser
-        ↓
-Rule Engine (Security + Best Practices)
-        ↓
-AI Reviewer (LLM)
-        ↓
-PR Comment Bot (Create/Update)
-```
+![alt text](arch.png)
 
 ---
 
